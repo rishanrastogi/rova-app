@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Icon } from '../../components/Icon';
+import DriveIcon from '../../components/DriveIcon';
 import { useTheme } from '../../context/ThemeContext';
 
 interface TabIconProps {
@@ -56,8 +57,8 @@ export default function TabLayout() {
         name="drive"
         options={{
           title: 'Drive',
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon name="car.side.fill" color={color} size={size} focused={focused} />
+          tabBarIcon: ({ color, size }) => (
+            <DriveIcon color={color} size={size + 4} />
           ),
         }}
       />
@@ -73,7 +74,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="rovaplay"
         options={{
-          title: 'RovaPlay',
+          title: 'Play',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon name="play.circle.fill" color={color} size={22} focused={focused} isCenter />
           ),
@@ -108,12 +109,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   centerTabIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -2,
+    marginTop: -7,
     borderWidth: 1.5,
   },
 });
