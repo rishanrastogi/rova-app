@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
-import { Colors } from '../../theme/colors';
 import { Icon } from '../../components/Icon';
+import { useTheme } from '../../context/ThemeContext';
 
 interface TabIconProps {
   name: string;
@@ -12,10 +12,18 @@ interface TabIconProps {
 }
 
 function TabIcon({ name, color, size, focused, isCenter }: TabIconProps) {
+  const { colors, isDark } = useTheme();
   if (isCenter) {
     return (
-      <View style={[styles.centerTabIcon, focused && styles.centerTabIconFocused]}>
-        <Icon name={name} size={size + 6} color={focused ? Colors.primary : '#888'} />
+      <View style={[
+        styles.centerTabIcon,
+        {
+          backgroundColor: isDark ? '#0D1520' : '#EEF4FF',
+          borderColor: focused ? colors.primary : (isDark ? '#1E2A3A' : '#C7D7F0'),
+        },
+        focused && { shadowColor: colors.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 },
+      ]}>
+        <Icon name={name} size={size + 6} color={focused ? colors.primary : (isDark ? '#888' : '#9CA3AF')} />
       </View>
     );
   }
@@ -24,15 +32,23 @@ function TabIcon({ name, color, size, focused, isCenter }: TabIconProps) {
 
 export default function TabLayout() {
   const { width, height } = useWindowDimensions();
+  const { colors, isDark } = useTheme();
   const isLandscape = width > height;
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: isLandscape ? { display: 'none' } : styles.tabBar,
-        tabBarActiveTintColor: Colors.tabBarActive,
-        tabBarInactiveTintColor: Colors.tabBarInactive,
+        tabBarStyle: isLandscape ? { display: 'none' } : {
+          backgroundColor: colors.tabBarBackground,
+          borderTopColor: isDark ? '#1A1A2E' : '#E2E8F0',
+          borderTopWidth: 1,
+          height: 76,
+          paddingBottom: 12,
+          paddingTop: 8,
+        },
+        tabBarActiveTintColor: colors.tabBarActive,
+        tabBarInactiveTintColor: colors.tabBarInactive,
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
@@ -58,10 +74,10 @@ export default function TabLayout() {
         name="rovaplay"
         options={{
           title: 'RovaPlay',
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon name="play.circle.fill" color={color} size={size} focused={focused} isCenter />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="play.circle.fill" color={color} size={22} focused={focused} isCenter />
           ),
-          tabBarLabelStyle: [styles.tabLabel, styles.centerTabLabel],
+          tabBarLabelStyle: [styles.tabLabel, { color: colors.primary, fontWeight: '700' }],
         }}
       />
       <Tabs.Screen
@@ -87,40 +103,17 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: Colors.tabBarBackground,
-    borderTopColor: '#1A1A2E',
-    borderTopWidth: 1,
-    height: 70,
-    paddingBottom: 10,
-    paddingTop: 6,
-  },
   tabLabel: {
     fontSize: 10,
     fontWeight: '500',
   },
-  centerTabLabel: {
-    color: Colors.primary,
-    fontWeight: '700',
-  },
   centerTabIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#0D1520',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -10,
+    marginTop: -2,
     borderWidth: 1.5,
-    borderColor: '#1E2A3A',
-  },
-  centerTabIconFocused: {
-    backgroundColor: '#0A1828',
-    borderColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
   },
 });

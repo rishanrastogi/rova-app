@@ -1,22 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Platform,
-  useWindowDimensions,
-} from 'react-native';
+import { View, Text, ScrollView, Platform, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ScreenOrientation from 'expo-screen-orientation';
-import { Colors } from '../../theme/colors';
 import { Icon } from '../../components/Icon';
+import { useTheme } from '../../context/ThemeContext';
 import CyclingDashboard from '../../components/rovaplay/CyclingDashboard';
 import CameraSettingsModal from '../../components/rovaplay/CameraSettingsModal';
 import WidgetGrid from '../../components/rovaplay/WidgetGrid';
 import { useLocation } from '../../hooks/useLocation';
 import { useBLE } from '../../hooks/useBLE';
 import { useESP32Camera } from '../../hooks/useESP32Camera';
+import { useRide } from '../../context/RideContext';
 import { widgets as allWidgets } from '../../constants/mockData';
 
 export default function RovaPlayScreen() {
@@ -26,12 +20,19 @@ export default function RovaPlayScreen() {
   const [isLandscape, setIsLandscape] = useState(false);
   const [cameraModalVisible, setCameraModalVisible] = useState(false);
 
+  const { colors } = useTheme();
   const locationState = useLocation();
   const bleData = useBLE();
   const { cameraIp, streamUrl, isConnected: cameraConnected, saveIp } = useESP32Camera();
+  const { setBattery, setSpeed, setBleConnected } = useRide();
   const { width, height } = useWindowDimensions();
 
-  // Always keep orientation unlocked — flipping the phone switches modes.
+  React.useEffect(() => {
+    if (bleData.battery != null) setBattery(bleData.battery);
+    if (bleData.speed != null) setSpeed(bleData.speed);
+    setBleConnected(bleData.connected);
+  }, [bleData.battery, bleData.speed, bleData.connected]);
+
   useEffect(() => {
     ScreenOrientation.unlockAsync();
     return () => {
@@ -39,7 +40,6 @@ export default function RovaPlayScreen() {
     };
   }, []);
 
-  // Track real orientation changes.
   useEffect(() => {
     const sync = async () => {
       const o = await ScreenOrientation.getOrientationAsync();
@@ -58,8 +58,8 @@ export default function RovaPlayScreen() {
     return () => ScreenOrientation.removeOrientationChangeListener(sub);
   }, []);
 
-  // Dimension fallback (simulator / locked-orientation environments).
   const effectiveLandscape = isLandscape || width > height;
+  const selectedWidgets = allWidgets.filter(w => activeWidgets.has(w.id));
 
   const toggleWidget = (id: string) => {
     setActiveWidgets(prev => {
@@ -69,12 +69,9 @@ export default function RovaPlayScreen() {
     });
   };
 
-  const selectedWidgets = allWidgets.filter(w => activeWidgets.has(w.id));
-
-  // ── LANDSCAPE / RIDE MODE — full screen, no chrome ───────────────────────
   if (effectiveLandscape) {
     return (
-      <View style={styles.fullscreen}>
+      <View style={{ flex: 1, backgroundColor: '#050709' }}>
         <CyclingDashboard
           selectedWidgets={selectedWidgets}
           locationState={locationState}
@@ -93,141 +90,31 @@ export default function RovaPlayScreen() {
     );
   }
 
-  // ── PORTRAIT / GALLERY MODE ───────────────────────────────────────────────
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.appName}>Rova</Text>
-        <View style={styles.playBadge}>
-          <Text style={styles.playBadgeText}>PLAY</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: Platform.OS === 'android' ? 16 : 8, paddingBottom: 12, gap: 8 }}>
+        <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: '800', letterSpacing: -0.5 }}>Rova</Text>
+        <View style={{ backgroundColor: colors.primary, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+          <Text style={{ color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 1 }}>PLAY</Text>
         </View>
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.galleryContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Section heading */}
-        <Text style={styles.sectionLabel}>ROVAPLAY</Text>
-        <Text style={styles.galleryTitle}>Choose your{'\n'}widgets.</Text>
-        <Text style={styles.gallerySubtitle}>
-          <Text style={styles.countHighlight}>{activeWidgets.size}</Text>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
+        <Text style={{ color: colors.textPrimary, fontSize: 32, fontWeight: '800', letterSpacing: -0.8, lineHeight: 38, marginBottom: 8 }}>Widgets</Text>
+        <Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 24 }}>
+          <Text style={{ color: colors.accent, fontWeight: '700' }}>{activeWidgets.size}</Text>
           {` of ${allWidgets.length} selected · arranges automatically`}
         </Text>
 
-        <WidgetGrid
-          activeWidgets={activeWidgets}
-          onToggle={toggleWidget}
-          widgets={allWidgets}
-        />
+        <WidgetGrid activeWidgets={activeWidgets} onToggle={toggleWidget} widgets={allWidgets} />
 
-        {/* Rotate to ride — sits below the grid so it doesn't eat into widget space */}
-        <View style={styles.ctaContainer}>
-          <View style={styles.ctaPill}>
-            <Icon name="bicycle" size={14} color={Colors.textSecondary} />
-            <Text style={styles.ctaText}>Rotate to ride</Text>
+        <View style={{ paddingVertical: 10, alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.card, borderRadius: 20, paddingVertical: 8, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.border }}>
+            <Icon name="bicycle" size={14} color={colors.textSecondary} />
+            <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500', letterSpacing: 0.2 }}>Rotate to ride</Text>
           </View>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const ACCENT = '#7DD3FC';
-
-const styles = StyleSheet.create({
-  fullscreen: {
-    flex: 1,
-    backgroundColor: '#050709',
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.dark,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 16 : 8,
-    paddingBottom: 12,
-    gap: 8,
-  },
-  appName: {
-    color: Colors.textPrimary,
-    fontSize: 22,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  playBadge: {
-    backgroundColor: Colors.primary,
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  playBadgeText: {
-    color: '#fff',
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  galleryContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-  },
-  sectionLabel: {
-    color: Colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
-  galleryTitle: {
-    color: Colors.textPrimary,
-    fontSize: 32,
-    fontWeight: '800',
-    letterSpacing: -0.8,
-    lineHeight: 38,
-    marginBottom: 8,
-  },
-  gallerySubtitle: {
-    color: Colors.textSecondary,
-    fontSize: 14,
-    marginBottom: 24,
-  },
-  countHighlight: {
-    color: ACCENT,
-    fontWeight: '700',
-  },
-  gridSpacing: {
-    gap: 0,
-  },
-  // Sticky CTA
-  ctaContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  ctaPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#151C28',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: '#1E2A3A',
-  },
-  ctaText: {
-    color: Colors.textSecondary,
-    fontSize: 12,
-    fontWeight: '500',
-    letterSpacing: 0.2,
-  },
-});

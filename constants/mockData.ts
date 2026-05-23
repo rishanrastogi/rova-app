@@ -7,13 +7,13 @@ export const cyclingDefaults = {
 };
 
 export const widgets = [
-  { id: 'speed',     label: 'Speed',            description: 'km/h · avg · max',       icon: 'speedometer' },
-  { id: 'battery',   label: 'Battery',           description: 'charge · range',         icon: 'battery.100.bolt' },
-  { id: 'map',       label: 'Map',               description: 'navigation · route',     icon: 'map.fill' },
-  { id: 'camera',    label: 'Rear Camera',        description: 'rear view · live',       icon: 'camera.fill' },
-  { id: 'collision', label: 'Collision',          description: 'proximity · alerts',     icon: 'checkmark.shield' },
-  { id: 'music',     label: 'Music',              description: 'playback · controls',    icon: 'music.note' },
-  { id: 'weather',   label: 'Weather',            description: 'temp · conditions',      icon: 'cloud.sun.fill' },
-  { id: 'hydration', label: 'Hydration',          description: 'reminders · tracking',  icon: 'drop.fill' },
-  { id: 'calendar',  label: 'Calendar',           description: 'events · schedule',      icon: 'calendar' },
+  { id: 'speed',     label: 'Speed',            description: 'Current, avg and max speed',    icon: 'speedometer' },
+  { id: 'battery',   label: 'Battery',           description: 'Charge level and range',        icon: 'battery.100.bolt' },
+  { id: 'map',       label: 'Map',               description: 'Live navigation and route',     icon: 'map.fill' },
+  { id: 'camera',    label: 'Rear Camera',        description: 'Live rear view feed',           icon: 'camera.fill' },
+  { id: 'collision', label: 'Collision',          description: 'Proximity and collision alerts',icon: 'checkmark.shield' },
+  { id: 'music',     label: 'Music',              description: 'Playback and controls',         icon: 'music.note' },
+  { id: 'weather',   label: 'Weather',            description: 'Temperature and conditions',    icon: 'cloud.sun.fill' },
+  { id: 'hydration', label: 'Hydration',          description: 'Reminders and tracking',        icon: 'drop.fill' },
+  { id: 'calendar',  label: 'Calendar',           description: 'Upcoming events and schedule',  icon: 'calendar' },
 ];

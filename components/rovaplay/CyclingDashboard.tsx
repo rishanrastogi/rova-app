@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,10 @@ import {
 import Svg, { Circle, Line, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { WebView } from 'react-native-webview';
 import { Icon } from '../Icon';
-import { Colors } from '../../theme/colors';
 import { cyclingDefaults } from '../../constants/mockData';
 import type { LocationState } from '../../hooks/useLocation';
+import { useRide } from '../../context/RideContext';
+import { useTheme } from '../../context/ThemeContext';
 import type { BLEData } from '../../hooks/useBLE';
 import { useWeather } from '../../hooks/useWeather';
 import Constants from 'expo-constants';
@@ -51,10 +52,23 @@ const A_WARN = '#FFB547';
 const C_FG = '#FFFFFF';
 const C_DIM = 'rgba(255,255,255,0.65)';
 const C_DIM2 = 'rgba(255,255,255,0.42)';
-const C_ACCENT = '#4AF3D0';
+const C_ACCENT = '#38BDF8';
 const C_WARN = '#FFB547';
 const C_GLASS = 'rgba(8, 12, 20, 0.72)';
 const C_BORDER = 'rgba(255,255,255,0.13)';
+
+function useHUDColors() {
+  const { isDark, colors } = useTheme();
+  return {
+    fg: isDark ? C_FG : '#0A0A0F',
+    dim: isDark ? C_DIM : 'rgba(0,0,0,0.55)',
+    dim2: isDark ? C_DIM2 : 'rgba(0,0,0,0.40)',
+    accent: isDark ? C_ACCENT : colors.accent,
+    glass: isDark ? C_GLASS : 'rgba(255,255,255,0.88)',
+    border: isDark ? C_BORDER : 'rgba(0,0,0,0.08)',
+    trackBg: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.10)',
+  };
+}
 
 // ── Speed Arc (SVG) ───────────────────────────────────────────────────────────
 function SpeedArc({
@@ -236,7 +250,7 @@ function LayoutA({ speed, battery, bleConnected }: { speed: number; battery: num
 }
 
 function BatteryCellA({ battery }: { battery: number }) {
-  const { range } = cyclingDefaults;
+  const range = Math.round(battery * 1.1);
   const color = battery > 50 ? A_ACCENT : battery > 20 ? A_WARN : '#FF5C7A';
   return (
     <View>
@@ -355,14 +369,15 @@ function GlassPanel({
   style?: any;
   padding?: number;
 }) {
+  const { glass, border } = useHUDColors();
   return (
     <View
       style={[
         {
-          backgroundColor: C_GLASS,
+          backgroundColor: glass,
           borderRadius: 16,
           borderWidth: 1,
-          borderColor: C_BORDER,
+          borderColor: border,
           padding,
         },
         style,
@@ -374,8 +389,9 @@ function GlassPanel({
 }
 
 function Pill({ children, accent = C_FG }: { children: React.ReactNode; accent?: string }) {
+  const { glass, border } = useHUDColors();
   return (
-    <View style={[pillSt.root, { borderColor: C_BORDER }]}>
+    <View style={[pillSt.root, { backgroundColor: glass, borderColor: border }]}>
       <Text style={[pillSt.text, { color: accent }]}>{children}</Text>
     </View>
   );
@@ -394,24 +410,25 @@ const pillSt = StyleSheet.create({
 });
 
 function SpeedHUDC({ speed, fromBle }: { speed: number; fromBle?: boolean }) {
+  const { fg, dim2 } = useHUDColors();
   return (
     <GlassPanel style={cStyles.speedHUD} padding={14}>
       <View style={cStyles.speedHUDInner}>
         <View style={{ width: 90, height: 90 }}>
           <SpeedArc speed={speed} size={90} stroke={7} gradId="arcC" />
           <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
-            <Text style={cStyles.hudKmh}>KM/H</Text>
-            <Text style={cStyles.hudSpeed}>{speed}</Text>
+            <Text style={[cStyles.hudKmh, { color: dim2 }]}>KM/H</Text>
+            <Text style={[cStyles.hudSpeed, { color: fg }]}>{speed}</Text>
           </View>
         </View>
         <View style={{ gap: 6 }}>
           <View>
-            <Text style={cStyles.hudStatLbl}>AVG</Text>
-            <Text style={cStyles.hudStatVal}>19</Text>
+            <Text style={[cStyles.hudStatLbl, { color: dim2 }]}>AVG</Text>
+            <Text style={[cStyles.hudStatVal, { color: fg }]}>19</Text>
           </View>
           <View>
-            <Text style={cStyles.hudStatLbl}>MAX</Text>
-            <Text style={cStyles.hudStatVal}>38</Text>
+            <Text style={[cStyles.hudStatLbl, { color: dim2 }]}>MAX</Text>
+            <Text style={[cStyles.hudStatVal, { color: fg }]}>38</Text>
           </View>
         </View>
       </View>
@@ -420,45 +437,47 @@ function SpeedHUDC({ speed, fromBle }: { speed: number; fromBle?: boolean }) {
 }
 
 function BatteryHUDC({ battery }: { battery: number }) {
-  const { range } = cyclingDefaults;
+  const range = Math.round(battery * 1.1);
+  const { fg, dim2, accent, trackBg } = useHUDColors();
   return (
     <GlassPanel padding={12} style={cStyles.battHUD}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={cStyles.hudLabel}>BATTERY</Text>
-        <Icon name="bolt.fill" size={11} color={C_ACCENT} />
+        <Text style={[cStyles.hudLabel, { color: dim2 }]}>BATTERY</Text>
+        <Icon name="bolt.fill" size={11} color={accent} />
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
-        <Text style={cStyles.battNum}>{battery}</Text>
-        <Text style={cStyles.hudLabel}>%</Text>
-        <Text style={[cStyles.hudLabel, { marginLeft: 'auto' as any }]}>{range} km</Text>
+        <Text style={[cStyles.battNum, { color: fg }]}>{battery}</Text>
+        <Text style={[cStyles.hudLabel, { color: dim2 }]}>%</Text>
+        <Text style={[cStyles.hudLabel, { marginLeft: 'auto' as any, color: dim2 }]}>{range} km</Text>
       </View>
-      <View style={cStyles.battTrack}>
-        <View style={[cStyles.battFill, { width: `${battery}%` as any }]} />
+      <View style={[cStyles.battTrack, { backgroundColor: trackBg }]}>
+        <View style={[cStyles.battFill, { width: `${battery}%` as any, backgroundColor: accent }]} />
       </View>
     </GlassPanel>
   );
 }
 
 function NavHUDC() {
+  const { fg, dim, accent } = useHUDColors();
   return (
     <GlassPanel padding={12} style={cStyles.navHUD}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-        <View style={cStyles.navArrow}>
+        <View style={[cStyles.navArrow, { backgroundColor: accent }]}>
           <Icon name="chevron.right" size={16} color="#000" />
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Icon name="location.fill" size={13} color={C_DIM} />
-          <Text style={cStyles.navStat}>320m</Text>
+          <Icon name="location.fill" size={13} color={dim} />
+          <Text style={[cStyles.navStat, { color: fg }]}>320m</Text>
         </View>
         <View style={cStyles.navDivider} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Icon name="clock" size={13} color={C_DIM} />
-          <Text style={cStyles.navStat}>35m</Text>
+          <Icon name="clock" size={13} color={dim} />
+          <Text style={[cStyles.navStat, { color: fg }]}>35m</Text>
         </View>
         <View style={cStyles.navDivider} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Icon name="map" size={13} color={C_DIM} />
-          <Text style={cStyles.navStat}>27km</Text>
+          <Icon name="map" size={13} color={dim} />
+          <Text style={[cStyles.navStat, { color: fg }]}>27km</Text>
         </View>
       </View>
     </GlassPanel>
@@ -466,18 +485,20 @@ function NavHUDC() {
 }
 
 function WeatherHUDC({ weather }: { weather: any }) {
+  const { fg, dim2 } = useHUDColors();
   return (
     <GlassPanel padding={10} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
       <Icon name={weather?.sfSymbol ?? 'sun.max.fill'} size={20} color="#FFB547" />
       <View>
-        <Text style={[cStyles.hudStatVal, { fontSize: 18 }]}>{weather?.temperature ?? 22}°</Text>
-        <Text style={cStyles.hudLabel}>{weather?.windSpeed ?? 12} km/h</Text>
+        <Text style={[cStyles.hudStatVal, { fontSize: 18, color: fg }]}>{weather?.temperature ?? 22}°</Text>
+        <Text style={[cStyles.hudLabel, { color: dim2 }]}>{weather?.windSpeed ?? 12} km/h</Text>
       </View>
     </GlassPanel>
   );
 }
 
 function MusicHUDC({ isPlaying, onToggle }: { isPlaying: boolean; onToggle: () => void }) {
+  const { fg, dim2 } = useHUDColors();
   return (
     <GlassPanel padding={11} style={cStyles.musicHUD}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
@@ -485,10 +506,10 @@ function MusicHUDC({ isPlaying, onToggle }: { isPlaying: boolean; onToggle: () =
           <Icon name="music.note" size={14} color="#fff" />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={cStyles.songTitle} numberOfLines={1}>
+          <Text style={[cStyles.songTitle, { color: fg }]} numberOfLines={1}>
             {cyclingDefaults.currentSong.split(' - ')[0]}
           </Text>
-          <Text style={cStyles.hudLabel}>
+          <Text style={[cStyles.hudLabel, { color: dim2 }]}>
             {cyclingDefaults.currentSong.split(' - ')[1]}
           </Text>
         </View>
@@ -496,7 +517,7 @@ function MusicHUDC({ isPlaying, onToggle }: { isPlaying: boolean; onToggle: () =
           <Icon
             name={isPlaying ? 'pause.circle.fill' : 'play.circle.fill'}
             size={22}
-            color={C_FG}
+            color={fg}
           />
         </TouchableOpacity>
       </View>
@@ -505,38 +526,41 @@ function MusicHUDC({ isPlaying, onToggle }: { isPlaying: boolean; onToggle: () =
 }
 
 function HydrationHUDC() {
+  const { fg, dim2 } = useHUDColors();
   return (
     <GlassPanel padding={10} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
       <Icon name="drop.fill" size={16} color="#7CB8FF" />
       <View>
-        <Text style={[cStyles.songTitle, { fontSize: 12 }]}>Sip in 4 min</Text>
-        <Text style={cStyles.hudLabel}>4 / 8 today</Text>
+        <Text style={[cStyles.songTitle, { fontSize: 12, color: fg }]}>Sip in 4 min</Text>
+        <Text style={[cStyles.hudLabel, { color: dim2 }]}>4 / 8 today</Text>
       </View>
     </GlassPanel>
   );
 }
 
 function CalHUDC() {
+  const { fg, dim2 } = useHUDColors();
   return (
     <GlassPanel padding={10} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <Icon name="calendar" size={14} color={C_DIM} />
+      <Icon name="calendar" size={14} color={dim2} />
       <View>
-        <Text style={[cStyles.songTitle, { fontSize: 12 }]}>Standup · 16:00</Text>
-        <Text style={cStyles.hudLabel}>in 28 min</Text>
+        <Text style={[cStyles.songTitle, { fontSize: 12, color: fg }]}>Standup · 16:00</Text>
+        <Text style={[cStyles.hudLabel, { color: dim2 }]}>in 28 min</Text>
       </View>
     </GlassPanel>
   );
 }
 
 function CollisionHUDC({ alert }: { alert: boolean }) {
+  const { glass, border, accent } = useHUDColors();
   return (
-    <View style={[pillSt.root, { borderColor: alert ? 'rgba(255,59,92,0.5)' : C_BORDER }]}>
+    <View style={[pillSt.root, { backgroundColor: glass, borderColor: alert ? 'rgba(255,59,92,0.5)' : border }]}>
       <Icon
         name={alert ? 'exclamationmark.triangle.fill' : 'checkmark.shield'}
         size={12}
-        color={alert ? '#FF5C7A' : C_ACCENT}
+        color={alert ? '#FF5C7A' : accent}
       />
-      <Text style={[pillSt.text, { color: alert ? '#FF5C7A' : C_ACCENT }]}>
+      <Text style={[pillSt.text, { color: alert ? '#FF5C7A' : accent }]}>
         {alert ? 'ALERT' : 'SAFE · 360°'}
       </Text>
     </View>
@@ -552,25 +576,40 @@ function SpeedHeroBgC() {
 }
 
 function MapHeroC({ location }: { location: any }) {
+  const mapRef = useRef<any>(null);
+  const { isDark } = useTheme();
+
+  useEffect(() => {
+    if (location && mapRef.current) {
+      mapRef.current.animateToRegion({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.004,
+        longitudeDelta: 0.004,
+      }, 800);
+    }
+  }, [location]);
+
   if (!location) {
     return (
-      <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#080E1A' }]}>
+      <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#1A1A2E' }]}>
         <ActivityIndicator color={C_ACCENT} />
       </View>
     );
   }
   if (!canRenderMap) {
     return (
-      <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#080E1A' }]}>
+      <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#1A1A2E' }]}>
         <Text style={{ color: C_DIM, fontSize: 13 }}>Map needs a dev build</Text>
       </View>
     );
   }
   return (
     <MapView
+      ref={mapRef}
       style={StyleSheet.absoluteFill}
       provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : PROVIDER_DEFAULT}
-      region={{
+      initialRegion={{
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
         latitudeDelta: 0.004,
@@ -581,7 +620,7 @@ function MapHeroC({ location }: { location: any }) {
       showsCompass={false}
       pitchEnabled={false}
       rotateEnabled={false}
-      customMapStyle={darkMapStyle}
+      customMapStyle={isDark ? slateDarkMapStyle : lightMapStyle}
     />
   );
 }
@@ -589,13 +628,17 @@ function MapHeroC({ location }: { location: any }) {
 function LayoutC({
   ids,
   locationState,
-  bleData,
+  speed,
+  battery,
+  bleConnected,
   cameraStreamUrl,
   onCameraSettings,
 }: {
   ids: Set<string>;
   locationState: LocationState;
-  bleData?: BLEData;
+  speed: number;
+  battery: number;
+  bleConnected: boolean;
   cameraStreamUrl?: string | null;
   onCameraSettings?: () => void;
 }) {
@@ -604,10 +647,7 @@ function LayoutC({
   const alertShake = useRef(new Animated.Value(0)).current;
 
   const weather = useWeather(locationState.location);
-
-  const speed = bleData?.speed ?? cyclingDefaults.speed;
-  const battery = bleData?.battery ?? cyclingDefaults.battery;
-  const bleConnected = bleData?.connected ?? false;
+  const { fg, dim, dim2, accent, glass, border } = useHUDColors();
 
   const has = (id: string) => ids.has(id);
   const bg = has('map') ? 'map' : has('camera') ? 'camera' : 'speed';
@@ -663,25 +703,25 @@ function LayoutC({
       {/* ── Top bar ── */}
       <View style={cStyles.topBar}>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-          <View style={pillSt.root}>
-            <View style={[{ width: 6, height: 6, borderRadius: 3, backgroundColor: C_ACCENT, marginRight: 6 }]} />
-            <Text style={[pillSt.text, { color: C_ACCENT }]}>RIDE · 00:42:18</Text>
+          <View style={[pillSt.root, { backgroundColor: glass, borderColor: border }]}>
+            <View style={[{ width: 6, height: 6, borderRadius: 3, backgroundColor: accent, marginRight: 6 }]} />
+            <Text style={[pillSt.text, { color: accent }]}>RIDE · 00:42:18</Text>
           </View>
-          <View style={[pillSt.root, { borderColor: bleConnected ? 'rgba(74,243,208,0.4)' : C_BORDER }]}>
-            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: bleConnected ? C_ACCENT : '#555', marginRight: 6 }} />
-            <Text style={[pillSt.text, { color: bleConnected ? C_ACCENT : 'rgba(255,255,255,0.35)' }]}>BLE</Text>
+          <View style={[pillSt.root, { backgroundColor: glass, borderColor: bleConnected ? 'rgba(74,243,208,0.4)' : border }]}>
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: bleConnected ? accent : '#555', marginRight: 6 }} />
+            <Text style={[pillSt.text, { color: bleConnected ? accent : dim2 }]}>BLE</Text>
           </View>
           {bg === 'camera' && onCameraSettings && (
-            <TouchableOpacity onPress={onCameraSettings} style={pillSt.root}>
-              <Icon name="gear" size={11} color={C_DIM} />
+            <TouchableOpacity onPress={onCameraSettings} style={[pillSt.root, { backgroundColor: glass, borderColor: border }]}>
+              <Icon name="gear" size={11} color={dim} />
             </TouchableOpacity>
           )}
         </View>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
           {has('weather') && weather && <WeatherHUDC weather={weather} />}
           {has('collision') && <CollisionHUDC alert={collisionAlert} />}
-          <View style={pillSt.root}>
-            <Text style={[pillSt.text, { color: C_DIM }]}>14:32</Text>
+          <View style={[pillSt.root, { backgroundColor: glass, borderColor: border }]}>
+            <Text style={[pillSt.text, { color: dim }]}>14:32</Text>
           </View>
         </View>
       </View>
@@ -973,15 +1013,39 @@ const cStyles = StyleSheet.create({
 });
 
 // ── Dark map style ────────────────────────────────────────────────────────────
-const darkMapStyle = [
-  { elementType: 'geometry', stylers: [{ color: '#08101e' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#4AF3D0' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#08101e' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1a2a3a' }] },
-  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#243545' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#050d18' }] },
+const lightMapStyle = [
+  { elementType: 'geometry', stylers: [{ color: '#F5F7FA' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#0EA5E9' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#FFFFFF' }] },
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FFFFFF' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#E2E8F0' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#E2E8F0' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#CBD5E1' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#BAE6FD' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#0EA5E9' }] },
+  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#F5F7FA' }] },
   { featureType: 'poi', stylers: [{ visibility: 'off' }] },
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+];
+
+const slateDarkMapStyle = [
+  { elementType: 'geometry', stylers: [{ color: '#1C1C1E' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#00CFFF' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#1C1C1E' }] },
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1E3A5F' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#152D4A' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#2A4E80' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#1E3A5F' }] },
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#1E3A5F' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0A0F1A' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#00CFFF' }] },
+  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#1C1C1E' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#2A2A2E' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#00CFFF' }] },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -989,9 +1053,10 @@ const darkMapStyle = [
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function CyclingDashboard({ selectedWidgets, locationState, bleData, cameraStreamUrl, onCameraSettings }: Props) {
   const ids = new Set(selectedWidgets.map(w => w.id));
+  const rideContext = useRide();
 
-  const speed = bleData?.speed ?? cyclingDefaults.speed;
-  const battery = bleData?.battery ?? cyclingDefaults.battery;
+  const speed = bleData?.speed ?? rideContext.speed ?? cyclingDefaults.speed;
+  const battery = bleData?.battery ?? rideContext.battery ?? cyclingDefaults.battery;
   const bleConnected = bleData?.connected ?? false;
 
   // Variation A: minimal (only speed + battery selected, nothing else)
@@ -1016,5 +1081,5 @@ export default function CyclingDashboard({ selectedWidgets, locationState, bleDa
   }
 
   if (isMinimal) return <LayoutA speed={speed} battery={battery} bleConnected={bleConnected} />;
-  return <LayoutC ids={ids} locationState={locationState} bleData={bleData} cameraStreamUrl={cameraStreamUrl} onCameraSettings={onCameraSettings} />;
+  return <LayoutC ids={ids} locationState={locationState} speed={speed} battery={battery} bleConnected={bleConnected} cameraStreamUrl={cameraStreamUrl} onCameraSettings={onCameraSettings} />;
 }
