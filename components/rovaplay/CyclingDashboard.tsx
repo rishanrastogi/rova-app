@@ -40,6 +40,36 @@ interface Props {
 // ── Constants ────────────────────────────────────────────────────────────────
 const MONO = Platform.OS === 'ios' ? 'Courier New' : 'monospace';
 
+function formatClock(date: Date) {
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function useLiveClock() {
+  const [time, setTime] = useState(() => formatClock(new Date()));
+  useEffect(() => {
+    const id = setInterval(() => setTime(formatClock(new Date())), 30 * 1000);
+    return () => clearInterval(id);
+  }, []);
+  return time;
+}
+
+function formatRideTime(totalSeconds: number) {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return [h, m, s].map(n => String(n).padStart(2, '0')).join(':');
+}
+
+function useRideTimer() {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const start = Date.now();
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return formatRideTime(elapsed);
+}
+
 // Variation A palette
 const A_BG = '#080A0D';
 const A_LINE = 'rgba(255,255,255,0.08)';
@@ -174,17 +204,17 @@ function Spark({ color = '#7FC9A8', w = 60, h = 18 }: { color?: string; w?: numb
 }
 
 // ── Status strip (shared) ─────────────────────────────────────────────────────
-function StatusStrip({ dim, fg, accent, line }: {
-  dim: string; fg: string; accent: string; line: string;
+function StatusStrip({ dim, fg, accent, line, time, rideTime }: {
+  dim: string; fg: string; accent: string; line: string; time: string; rideTime: string;
 }) {
   return (
     <View style={[ss.row, { borderBottomColor: line }]}>
       <View style={ss.left}>
         <View style={[ss.dot, { backgroundColor: accent }]} />
-        <Text style={[ss.mono, { color: accent }]}>RIDE 00:42:18</Text>
+        <Text style={[ss.mono, { color: accent }]}>RIDE {rideTime}</Text>
         <Text style={[ss.mono, { color: dim }]}>  GPS · 8 SATS</Text>
       </View>
-      <Text style={[ss.mono, { color: dim }]}>14:32</Text>
+      <Text style={[ss.mono, { color: dim }]}>{time}</Text>
     </View>
   );
 }
@@ -205,10 +235,11 @@ const ss = StyleSheet.create({
 // ═══════════════════════════════════════════════════════════════════════════════
 // VARIATION A — CLEAN CLUSTER (minimal: speed + battery only)
 // ═══════════════════════════════════════════════════════════════════════════════
-function LayoutA({ speed, battery, bleConnected }: { speed: number; battery: number; bleConnected: boolean }) {
+function LayoutA({ speed, battery, bleConnected, rideTime }: { speed: number; battery: number; bleConnected: boolean; rideTime: string }) {
+  const time = useLiveClock();
   return (
     <View style={[aStyles.root]}>
-      <StatusStrip dim={A_DIM} fg={A_FG} accent={A_ACCENT} line={A_LINE} />
+      <StatusStrip dim={A_DIM} fg={A_FG} accent={A_ACCENT} line={A_LINE} time={time} rideTime={rideTime} />
       {bleConnected && (
         <View style={{ position: 'absolute', top: 34, right: 12, flexDirection: 'row', alignItems: 'center', gap: 5, zIndex: 10 }}>
           <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: A_ACCENT }} />
@@ -457,33 +488,6 @@ function BatteryHUDC({ battery }: { battery: number }) {
   );
 }
 
-function NavHUDC() {
-  const { fg, dim, accent } = useHUDColors();
-  return (
-    <GlassPanel padding={12} style={cStyles.navHUD}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-        <View style={[cStyles.navArrow, { backgroundColor: accent }]}>
-          <Icon name="chevron.right" size={16} color="#000" />
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Icon name="location.fill" size={13} color={dim} />
-          <Text style={[cStyles.navStat, { color: fg }]}>320m</Text>
-        </View>
-        <View style={cStyles.navDivider} />
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Icon name="clock" size={13} color={dim} />
-          <Text style={[cStyles.navStat, { color: fg }]}>35m</Text>
-        </View>
-        <View style={cStyles.navDivider} />
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Icon name="map" size={13} color={dim} />
-          <Text style={[cStyles.navStat, { color: fg }]}>27km</Text>
-        </View>
-      </View>
-    </GlassPanel>
-  );
-}
-
 function WeatherHUDC({ weather }: { weather: any }) {
   const { fg, dim2 } = useHUDColors();
   return (
@@ -633,6 +637,7 @@ function LayoutC({
   bleConnected,
   cameraStreamUrl,
   onCameraSettings,
+  rideTime,
 }: {
   ids: Set<string>;
   locationState: LocationState;
@@ -641,10 +646,12 @@ function LayoutC({
   bleConnected: boolean;
   cameraStreamUrl?: string | null;
   onCameraSettings?: () => void;
+  rideTime: string;
 }) {
   const [isPlaying, setIsPlaying] = useState(true);
   const [collisionAlert, setCollisionAlert] = useState(false);
   const alertShake = useRef(new Animated.Value(0)).current;
+  const time = useLiveClock();
 
   const weather = useWeather(locationState.location);
   const { fg, dim, dim2, accent, glass, border } = useHUDColors();
@@ -705,7 +712,7 @@ function LayoutC({
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
           <View style={[pillSt.root, { backgroundColor: glass, borderColor: border }]}>
             <View style={[{ width: 6, height: 6, borderRadius: 3, backgroundColor: accent, marginRight: 6 }]} />
-            <Text style={[pillSt.text, { color: accent }]}>RIDE · 00:42:18</Text>
+            <Text style={[pillSt.text, { color: accent }]}>RIDE · {rideTime}</Text>
           </View>
           <View style={[pillSt.root, { backgroundColor: glass, borderColor: bleConnected ? 'rgba(74,243,208,0.4)' : border }]}>
             <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: bleConnected ? accent : '#555', marginRight: 6 }} />
@@ -721,7 +728,7 @@ function LayoutC({
           {has('weather') && weather && <WeatherHUDC weather={weather} />}
           {has('collision') && <CollisionHUDC alert={collisionAlert} />}
           <View style={[pillSt.root, { backgroundColor: glass, borderColor: border }]}>
-            <Text style={[pillSt.text, { color: dim }]}>14:32</Text>
+            <Text style={[pillSt.text, { color: dim }]}>{time}</Text>
           </View>
         </View>
       </View>
@@ -783,13 +790,6 @@ function LayoutC({
       {bg === 'speed' && (
         <View style={cStyles.bottomLeft}>
           <BatteryHUDC battery={battery} />
-        </View>
-      )}
-
-      {/* ── Bottom-center: nav (when map active) ── */}
-      {bg === 'map' && (
-        <View style={cStyles.bottomCenter}>
-          <NavHUDC />
         </View>
       )}
 
@@ -905,29 +905,6 @@ const cStyles = StyleSheet.create({
     backgroundColor: C_ACCENT,
     borderRadius: 2,
   },
-  // Nav HUD
-  navHUD: {
-    alignSelf: 'center',
-  },
-  navArrow: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: C_ACCENT,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navStat: {
-    color: C_FG,
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: -0.3,
-  },
-  navDivider: {
-    width: 1,
-    height: 14,
-    backgroundColor: C_BORDER,
-  },
   // Music HUD
   musicHUD: {
     minWidth: 200,
@@ -994,14 +971,6 @@ const cStyles = StyleSheet.create({
     gap: 8,
     zIndex: 10,
   },
-  bottomCenter: {
-    position: 'absolute',
-    bottom: 12,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 10,
-  },
   bottomRight: {
     position: 'absolute',
     bottom: 12,
@@ -1054,6 +1023,7 @@ const slateDarkMapStyle = [
 export default function CyclingDashboard({ selectedWidgets, locationState, bleData, cameraStreamUrl, onCameraSettings }: Props) {
   const ids = new Set(selectedWidgets.map(w => w.id));
   const rideContext = useRide();
+  const rideTime = useRideTimer();
 
   const speed = bleData?.speed ?? rideContext.speed ?? cyclingDefaults.speed;
   const battery = bleData?.battery ?? rideContext.battery ?? cyclingDefaults.battery;
@@ -1080,6 +1050,6 @@ export default function CyclingDashboard({ selectedWidgets, locationState, bleDa
     );
   }
 
-  if (isMinimal) return <LayoutA speed={speed} battery={battery} bleConnected={bleConnected} />;
-  return <LayoutC ids={ids} locationState={locationState} speed={speed} battery={battery} bleConnected={bleConnected} cameraStreamUrl={cameraStreamUrl} onCameraSettings={onCameraSettings} />;
+  if (isMinimal) return <LayoutA speed={speed} battery={battery} bleConnected={bleConnected} rideTime={rideTime} />;
+  return <LayoutC ids={ids} locationState={locationState} speed={speed} battery={battery} bleConnected={bleConnected} cameraStreamUrl={cameraStreamUrl} onCameraSettings={onCameraSettings} rideTime={rideTime} />;
 }
