@@ -10,7 +10,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import Svg, { Circle, Line, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { WebView } from 'react-native-webview';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Icon } from '../Icon';
 import { cyclingDefaults } from '../../constants/mockData';
 import type { LocationState } from '../../hooks/useLocation';
@@ -32,8 +32,6 @@ interface Props {
   selectedWidgets: Widget[];
   locationState: LocationState;
   bleData?: BLEData;
-  cameraStreamUrl?: string | null;
-  onCameraSettings?: () => void;
   screenWidth?: number;
 }
 
@@ -571,6 +569,32 @@ function CollisionHUDC({ alert }: { alert: boolean }) {
   );
 }
 
+function CameraFeedC({
+  permission,
+  onRequestPermission,
+}: {
+  permission: ReturnType<typeof useCameraPermissions>[0];
+  onRequestPermission: () => void;
+}) {
+  if (permission?.granted) {
+    return <CameraView style={StyleSheet.absoluteFill} facing="back" />;
+  }
+  return (
+    <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#060C14' }]}>
+      <Icon name="camera.fill" size={32} color="rgba(255,255,255,0.2)" />
+      <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, marginTop: 10, textAlign: 'center', paddingHorizontal: 32 }}>
+        Camera access is needed for the rear-view feed
+      </Text>
+      <TouchableOpacity
+        onPress={onRequestPermission}
+        style={{ marginTop: 14, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8 }}
+      >
+        <Text style={{ color: '#4AF3D0', fontSize: 13, fontWeight: '600' }}>Grant camera access</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 function SpeedHeroBgC() {
   return (
     <View style={[StyleSheet.absoluteFill, cStyles.speedBg]}>
@@ -635,8 +659,6 @@ function LayoutC({
   speed,
   battery,
   bleConnected,
-  cameraStreamUrl,
-  onCameraSettings,
   rideTime,
 }: {
   ids: Set<string>;
@@ -644,14 +666,13 @@ function LayoutC({
   speed: number;
   battery: number;
   bleConnected: boolean;
-  cameraStreamUrl?: string | null;
-  onCameraSettings?: () => void;
   rideTime: string;
 }) {
   const [isPlaying, setIsPlaying] = useState(true);
   const [collisionAlert, setCollisionAlert] = useState(false);
   const alertShake = useRef(new Animated.Value(0)).current;
   const time = useLiveClock();
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 
   const weather = useWeather(locationState.location);
   const { fg, dim, dim2, accent, glass, border } = useHUDColors();
@@ -680,27 +701,7 @@ function LayoutC({
       {/* ── Full-bleed background ── */}
       {bg === 'map' && <MapHeroC location={locationState.location} />}
       {bg === 'camera' && (
-        cameraStreamUrl ? (
-          <WebView
-            style={StyleSheet.absoluteFill}
-            source={{ html: `<html><body style="margin:0;background:#000"><img src="${cameraStreamUrl}" style="width:100%;height:100%;object-fit:cover" /></body></html>` }}
-            scrollEnabled={false}
-            bounces={false}
-          />
-        ) : (
-          <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#060C14' }]}>
-            <Icon name="camera.fill" size={32} color="rgba(255,255,255,0.2)" />
-            <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, marginTop: 10 }}>No camera configured</Text>
-            {onCameraSettings && (
-              <TouchableOpacity
-                onPress={onCameraSettings}
-                style={{ marginTop: 14, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8 }}
-              >
-                <Text style={{ color: '#4AF3D0', fontSize: 13, fontWeight: '600' }}>Set up camera</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )
+        <CameraFeedC permission={cameraPermission} onRequestPermission={requestCameraPermission} />
       )}
       {bg === 'speed' && <SpeedHeroBgC />}
 
@@ -718,11 +719,6 @@ function LayoutC({
             <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: bleConnected ? accent : '#555', marginRight: 6 }} />
             <Text style={[pillSt.text, { color: bleConnected ? accent : dim2 }]}>BLE</Text>
           </View>
-          {bg === 'camera' && onCameraSettings && (
-            <TouchableOpacity onPress={onCameraSettings} style={[pillSt.root, { backgroundColor: glass, borderColor: border }]}>
-              <Icon name="gear" size={11} color={dim} />
-            </TouchableOpacity>
-          )}
         </View>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
           {has('weather') && weather && <WeatherHUDC weather={weather} />}
@@ -769,7 +765,7 @@ function LayoutC({
       )}
 
       {/* ── Camera live tag ── */}
-      {bg === 'camera' && cameraStreamUrl && (
+      {bg === 'camera' && cameraPermission?.granted && (
         <View style={cStyles.camTag}>
           <View style={[pillSt.root, { borderColor: 'rgba(255,59,92,0.5)' }]}>
             <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF3B5C', marginRight: 6 }} />
@@ -1020,7 +1016,7 @@ const slateDarkMapStyle = [
 // ═══════════════════════════════════════════════════════════════════════════════
 // Main export — decides which layout to render
 // ═══════════════════════════════════════════════════════════════════════════════
-export default function CyclingDashboard({ selectedWidgets, locationState, bleData, cameraStreamUrl, onCameraSettings }: Props) {
+export default function CyclingDashboard({ selectedWidgets, locationState, bleData }: Props) {
   const ids = new Set(selectedWidgets.map(w => w.id));
   const rideContext = useRide();
   const rideTime = useRideTimer();
@@ -1051,5 +1047,5 @@ export default function CyclingDashboard({ selectedWidgets, locationState, bleDa
   }
 
   if (isMinimal) return <LayoutA speed={speed} battery={battery} bleConnected={bleConnected} rideTime={rideTime} />;
-  return <LayoutC ids={ids} locationState={locationState} speed={speed} battery={battery} bleConnected={bleConnected} cameraStreamUrl={cameraStreamUrl} onCameraSettings={onCameraSettings} rideTime={rideTime} />;
+  return <LayoutC ids={ids} locationState={locationState} speed={speed} battery={battery} bleConnected={bleConnected} rideTime={rideTime} />;
 }

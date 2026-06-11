@@ -45,6 +45,13 @@ const SF_TO_IONICONS: Record<string, React.ComponentProps<typeof Ionicons>['name
   'rotate.right': 'phone-landscape-outline',
   'line.3.horizontal': 'reorder-three-outline',
   'arrow.up.arrow.down': 'swap-vertical',
+  'bubble.right': 'chatbubble-outline',
+  'bubble.right.fill': 'chatbubble',
+  'arrow.up.right': 'trending-up',
+  'hand.thumbsup.fill': 'thumbs-up',
+  'hand.thumbsup': 'thumbs-up-outline',
+  'flag.checkered': 'flag-outline',
+  'figure.walk': 'walk',
 };
 
 interface IconProps {

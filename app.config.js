@@ -60,6 +60,13 @@ module.exports = {
       ],
       "expo-font",
       "react-native-ble-plx",
+      [
+        "expo-camera",
+        {
+          cameraPermission:
+            "Rova uses your camera to show a live rear-view feed while riding.",
+        },
+      ],
     ],
   },
 };
