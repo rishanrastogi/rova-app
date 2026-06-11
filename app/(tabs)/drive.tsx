@@ -8,10 +8,10 @@ import { useTheme } from '../../context/ThemeContext';
 const MONO = Platform.OS === 'ios' ? 'Courier New' : 'monospace';
 
 const recentRides = [
-  { id: '1', date: 'Today',      distance: 14.2, avgSpeed: 22, duration: '38m' },
-  { id: '2', date: 'Yesterday',  distance: 28.7, avgSpeed: 26, duration: '1h 6m' },
-  { id: '3', date: 'Mon 12 May', distance: 9.4,  avgSpeed: 19, duration: '29m' },
-  { id: '4', date: 'Sat 10 May', distance: 42.1, avgSpeed: 24, duration: '1h 45m' },
+  { id: '1', date: 'Today',      distance: 14.2, avgSpeed: 18, duration: '38m' },
+  { id: '2', date: 'Yesterday',  distance: 28.7, avgSpeed: 19, duration: '1h 6m' },
+  { id: '3', date: 'Mon 12 May', distance: 9.4,  avgSpeed: 17, duration: '29m' },
+  { id: '4', date: 'Sat 10 May', distance: 42.1, avgSpeed: 19, duration: '1h 45m' },
 ];
 
 export default function DriveScreen() {

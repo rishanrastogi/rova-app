@@ -1,5 +1,5 @@
 export const cyclingDefaults = {
-  speed: 24,
+  maxSpeed: 20,
   battery: 78,
   range: 42,
   mode: 'Assist',
@@ -11,7 +11,7 @@ export const widgets = [
   { id: 'battery',   label: 'Battery',           description: 'Charge level and range',        icon: 'battery.100.bolt' },
   { id: 'map',       label: 'Map',               description: 'Live navigation and route',     icon: 'map.fill' },
   { id: 'camera',    label: 'Rear Camera',        description: 'Live rear view feed',           icon: 'camera.fill' },
-  { id: 'collision', label: 'Collision',          description: 'Proximity and collision alerts',icon: 'checkmark.shield' },
+  { id: 'proximity', label: 'Proximity',          description: 'Proximity alerts for nearby risks',icon: 'checkmark.shield' },
   { id: 'music',     label: 'Music',              description: 'Playback and controls',         icon: 'music.note' },
   { id: 'weather',   label: 'Weather',            description: 'Temperature and conditions',    icon: 'cloud.sun.fill' },
   { id: 'hydration', label: 'Hydration',          description: 'Reminders and tracking',        icon: 'drop.fill' },

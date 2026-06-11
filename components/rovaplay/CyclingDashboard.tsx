@@ -7,9 +7,10 @@ import {
   Animated,
   ActivityIndicator,
   Platform,
+  Vibration,
   useWindowDimensions,
 } from 'react-native';
-import Svg, { Circle, Line, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Rect, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Icon } from '../Icon';
 import { cyclingDefaults } from '../../constants/mockData';
@@ -68,6 +69,36 @@ function useRideTimer() {
   return formatRideTime(elapsed);
 }
 
+// Simulates a real ride's speed: gradual accelerations, cruising, and the odd slow-down.
+function useMockSpeed(maxSpeed: number) {
+  const [speed, setSpeed] = useState(0);
+  const targetRef = useRef(maxSpeed * 0.6);
+
+  useEffect(() => {
+    const pickTarget = () => {
+      const r = Math.random();
+      if (r < 0.15) targetRef.current = Math.random() * 4; // coast toward a near-stop
+      else if (r < 0.3) targetRef.current = maxSpeed; // brief push to top speed
+      else targetRef.current = maxSpeed * (0.5 + Math.random() * 0.4); // steady cruise
+    };
+    pickTarget();
+    const targetId = setInterval(pickTarget, 4000);
+    const tickId = setInterval(() => {
+      setSpeed(prev => {
+        const diff = targetRef.current - prev;
+        const next = prev + diff * 0.15 + (Math.random() - 0.5) * 0.6;
+        return Math.max(0, Math.min(maxSpeed, next));
+      });
+    }, 500);
+    return () => {
+      clearInterval(targetId);
+      clearInterval(tickId);
+    };
+  }, [maxSpeed]);
+
+  return Math.round(speed);
+}
+
 // Variation A palette
 const A_BG = '#080A0D';
 const A_LINE = 'rgba(255,255,255,0.08)';
@@ -100,8 +131,8 @@ function useHUDColors() {
 
 // ── Speed Arc (SVG) ───────────────────────────────────────────────────────────
 function SpeedArc({
-  speed = 24,
-  max = 60,
+  speed = 16,
+  max = 20,
   size = 120,
   stroke = 9,
   gradId = 'arcGrad',
@@ -247,7 +278,7 @@ function LayoutA({ speed, battery, bleConnected, rideTime }: { speed: number; ba
       <View style={aStyles.hero}>
         {/* Arc */}
         <View style={aStyles.arcWrap}>
-          <SpeedArc speed={speed} size={210} stroke={11} gradId="arcA" />
+          <SpeedArc speed={speed} max={cyclingDefaults.maxSpeed} size={210} stroke={11} gradId="arcA" />
           <View style={StyleSheet.absoluteFill} pointerEvents="none">
             <View style={aStyles.arcCenter}>
               <Text style={aStyles.kmhLabel}>KM/H</Text>
@@ -260,8 +291,8 @@ function LayoutA({ speed, battery, bleConnected, rideTime }: { speed: number; ba
         <View style={aStyles.rightCol}>
           <View style={aStyles.statsRow}>
             {[
-              { val: '19', lbl: 'AVG' },
-              { val: '38', lbl: 'MAX' },
+              { val: '14', lbl: 'AVG' },
+              { val: String(cyclingDefaults.maxSpeed), lbl: 'MAX' },
               { val: '12.4', lbl: 'KM' },
             ].map(({ val, lbl }) => (
               <View key={lbl} style={aStyles.statItem}>
@@ -444,7 +475,7 @@ function SpeedHUDC({ speed, fromBle }: { speed: number; fromBle?: boolean }) {
     <GlassPanel style={cStyles.speedHUD} padding={14}>
       <View style={cStyles.speedHUDInner}>
         <View style={{ width: 90, height: 90 }}>
-          <SpeedArc speed={speed} size={90} stroke={7} gradId="arcC" />
+          <SpeedArc speed={speed} max={cyclingDefaults.maxSpeed} size={90} stroke={7} gradId="arcC" />
           <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
             <Text style={[cStyles.hudKmh, { color: dim2 }]}>KM/H</Text>
             <Text style={[cStyles.hudSpeed, { color: fg }]}>{speed}</Text>
@@ -453,11 +484,11 @@ function SpeedHUDC({ speed, fromBle }: { speed: number; fromBle?: boolean }) {
         <View style={{ gap: 6 }}>
           <View>
             <Text style={[cStyles.hudStatLbl, { color: dim2 }]}>AVG</Text>
-            <Text style={[cStyles.hudStatVal, { color: fg }]}>19</Text>
+            <Text style={[cStyles.hudStatVal, { color: fg }]}>14</Text>
           </View>
           <View>
             <Text style={[cStyles.hudStatLbl, { color: dim2 }]}>MAX</Text>
-            <Text style={[cStyles.hudStatVal, { color: fg }]}>38</Text>
+            <Text style={[cStyles.hudStatVal, { color: fg }]}>{cyclingDefaults.maxSpeed}</Text>
           </View>
         </View>
       </View>
@@ -553,7 +584,7 @@ function CalHUDC() {
   );
 }
 
-function CollisionHUDC({ alert }: { alert: boolean }) {
+function ProximityHUDC({ alert }: { alert: boolean }) {
   const { glass, border, accent } = useHUDColors();
   return (
     <View style={[pillSt.root, { backgroundColor: glass, borderColor: alert ? 'rgba(255,59,92,0.5)' : border }]}>
@@ -563,9 +594,35 @@ function CollisionHUDC({ alert }: { alert: boolean }) {
         color={alert ? '#FF5C7A' : accent}
       />
       <Text style={[pillSt.text, { color: alert ? '#FF5C7A' : accent }]}>
-        {alert ? 'ALERT' : 'SAFE · 360°'}
+        {alert ? 'OBJECT NEAR' : 'CLEAR · 360°'}
       </Text>
     </View>
+  );
+}
+
+// Directional red glow that flashes in from whichever edge a vehicle approaches from.
+const PROXIMITY_SIDES = ['top', 'bottom', 'left', 'right'] as const;
+type ProximitySide = (typeof PROXIMITY_SIDES)[number];
+
+function ProximityFlash({ side, opacity }: { side: ProximitySide; opacity: Animated.Value }) {
+  const gradientCoords =
+    side === 'top' ? { x1: '0', y1: '0', x2: '0', y2: '1' }
+    : side === 'bottom' ? { x1: '0', y1: '1', x2: '0', y2: '0' }
+    : side === 'left' ? { x1: '0', y1: '0', x2: '1', y2: '0' }
+    : { x1: '1', y1: '0', x2: '0', y2: '0' };
+
+  return (
+    <Animated.View style={[StyleSheet.absoluteFill, { opacity }]} pointerEvents="none">
+      <Svg width="100%" height="100%">
+        <Defs>
+          <LinearGradient id="proximityFlash" {...gradientCoords}>
+            <Stop offset="0" stopColor="#FF1744" stopOpacity={0.85} />
+            <Stop offset="0.6" stopColor="#FF1744" stopOpacity={0} />
+          </LinearGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#proximityFlash)" />
+      </Svg>
+    </Animated.View>
   );
 }
 
@@ -669,8 +726,11 @@ function LayoutC({
   rideTime: string;
 }) {
   const [isPlaying, setIsPlaying] = useState(true);
-  const [collisionAlert, setCollisionAlert] = useState(false);
+  const [proximityAlert, setProximityAlert] = useState(false);
+  const [flashSide, setFlashSide] = useState<ProximitySide>('left');
   const alertShake = useRef(new Animated.Value(0)).current;
+  const flashOpacity = useRef(new Animated.Value(0)).current;
+  const alertActiveRef = useRef(false);
   const time = useLiveClock();
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 
@@ -680,15 +740,26 @@ function LayoutC({
   const has = (id: string) => ids.has(id);
   const bg = has('map') ? 'map' : has('camera') ? 'camera' : 'speed';
 
-  const triggerCollision = () => {
-    setCollisionAlert(true);
+  const triggerProximityAlert = () => {
+    if (alertActiveRef.current) return;
+    alertActiveRef.current = true;
+    setProximityAlert(true);
+    setFlashSide(PROXIMITY_SIDES[Math.floor(Math.random() * PROXIMITY_SIDES.length)]);
+    Vibration.vibrate([0, 200, 100, 200]);
     Animated.sequence([
       Animated.timing(alertShake, { toValue: 8, duration: 55, useNativeDriver: true }),
       Animated.timing(alertShake, { toValue: -8, duration: 55, useNativeDriver: true }),
       Animated.timing(alertShake, { toValue: 5, duration: 55, useNativeDriver: true }),
       Animated.timing(alertShake, { toValue: 0, duration: 55, useNativeDriver: true }),
     ]).start();
-    setTimeout(() => setCollisionAlert(false), 5000);
+    Animated.sequence([
+      Animated.timing(flashOpacity, { toValue: 1, duration: 120, useNativeDriver: true }),
+      Animated.timing(flashOpacity, { toValue: 0, duration: 700, useNativeDriver: true }),
+    ]).start();
+    setTimeout(() => {
+      setProximityAlert(false);
+      alertActiveRef.current = false;
+    }, 1500);
   };
 
   return (
@@ -708,6 +779,9 @@ function LayoutC({
       {/* ── Vignette ── */}
       <View style={cStyles.vignette} pointerEvents="none" />
 
+      {/* ── Proximity flash ── */}
+      <ProximityFlash side={flashSide} opacity={flashOpacity} />
+
       {/* ── Top bar ── */}
       <View style={cStyles.topBar}>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
@@ -722,7 +796,7 @@ function LayoutC({
         </View>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
           {has('weather') && weather && <WeatherHUDC weather={weather} />}
-          {has('collision') && <CollisionHUDC alert={collisionAlert} />}
+          {has('proximity') && <ProximityHUDC alert={proximityAlert} />}
           <View style={[pillSt.root, { backgroundColor: glass, borderColor: border }]}>
             <Text style={[pillSt.text, { color: dim }]}>{time}</Text>
           </View>
@@ -735,6 +809,7 @@ function LayoutC({
           <View style={{ width: 260, height: 260 }}>
             <SpeedArc
               speed={speed}
+              max={cyclingDefaults.maxSpeed}
               size={260}
               stroke={14}
               gradId="arcCHero"
@@ -751,8 +826,8 @@ function LayoutC({
           </View>
           <View style={{ gap: 14, marginLeft: 12 }}>
             {[
-              { lbl: 'AVG', val: '19' },
-              { lbl: 'MAX', val: '38' },
+              { lbl: 'AVG', val: '14' },
+              { lbl: 'MAX', val: String(cyclingDefaults.maxSpeed) },
               { lbl: 'TRIP', val: '12.4 km' },
             ].map(({ lbl, val }) => (
               <View key={lbl}>
@@ -794,8 +869,8 @@ function LayoutC({
         {has('calendar') && <CalHUDC />}
         {has('hydration') && <HydrationHUDC />}
         {has('music') && <MusicHUDC isPlaying={isPlaying} onToggle={() => setIsPlaying(p => !p)} />}
-        {has('collision') && !has('weather') && (
-          <TouchableOpacity onPress={triggerCollision}>
+        {has('proximity') && !has('weather') && (
+          <TouchableOpacity onPress={triggerProximityAlert}>
             <GlassPanel padding={10}>
               <Text style={{ color: '#FF5C7A', fontSize: 11, fontWeight: '600' }}>
                 Test Alert
@@ -1021,9 +1096,10 @@ export default function CyclingDashboard({ selectedWidgets, locationState, bleDa
   const rideContext = useRide();
   const rideTime = useRideTimer();
 
-  const speed = bleData?.speed ?? rideContext.speed ?? cyclingDefaults.speed;
-  const battery = bleData?.battery ?? rideContext.battery ?? cyclingDefaults.battery;
   const bleConnected = bleData?.connected ?? false;
+  const mockSpeed = useMockSpeed(cyclingDefaults.maxSpeed);
+  const speed = bleConnected ? (bleData?.speed ?? rideContext.speed) : mockSpeed;
+  const battery = bleData?.battery ?? rideContext.battery ?? cyclingDefaults.battery;
 
   // Variation A: minimal (only speed + battery selected, nothing else)
   const isMinimal =
@@ -1035,7 +1111,7 @@ export default function CyclingDashboard({ selectedWidgets, locationState, bleDa
     !ids.has('weather') &&
     !ids.has('hydration') &&
     !ids.has('calendar') &&
-    !ids.has('collision');
+    !ids.has('proximity');
 
   if (selectedWidgets.length === 0) {
     return (
