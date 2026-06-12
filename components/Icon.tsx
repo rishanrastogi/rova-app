@@ -52,6 +52,8 @@ const SF_TO_IONICONS: Record<string, React.ComponentProps<typeof Ionicons>['name
   'hand.thumbsup': 'thumbs-up-outline',
   'flag.checkered': 'flag-outline',
   'figure.walk': 'walk',
+  'backward.fill': 'play-skip-back',
+  'forward.fill': 'play-skip-forward',
 };
 
 interface IconProps {

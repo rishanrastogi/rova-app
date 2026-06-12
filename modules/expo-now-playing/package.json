@@ -1,0 +1,12 @@
+{
+  "name": "expo-now-playing",
+  "version": "1.0.0",
+  "description": "Reads the device's system-wide now-playing media session and exposes transport controls.",
+  "main": "index.ts",
+  "types": "index.ts",
+  "license": "UNLICENSED",
+  "private": true,
+  "peerDependencies": {
+    "expo": "*"
+  }
+}

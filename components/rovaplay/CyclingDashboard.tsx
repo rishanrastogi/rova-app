@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   StyleSheet,
   Animated,
@@ -19,6 +20,7 @@ import { useRide } from '../../context/RideContext';
 import { useTheme } from '../../context/ThemeContext';
 import type { BLEData } from '../../hooks/useBLE';
 import { useWeather } from '../../hooks/useWeather';
+import { useNowPlaying } from '../../hooks/useNowPlaying';
 import Constants from 'expo-constants';
 
 const canRenderMap =
@@ -532,11 +534,88 @@ function WeatherHUDC({ weather }: { weather: any }) {
 
 function MusicHUDC({ isPlaying, onToggle }: { isPlaying: boolean; onToggle: () => void }) {
   const { fg, dim2 } = useHUDColors();
+  const { available, permissionGranted, nowPlaying, requestAccess, togglePlayPause, skipToNext, skipToPrevious } = useNowPlaying();
+
+  // Android + notification access granted, but nothing is currently playing on the device.
+  if (available && permissionGranted && !nowPlaying) {
+    return (
+      <GlassPanel padding={12} style={cStyles.musicHUD}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+          <View style={cStyles.albumArt}>
+            <Icon name="music.note" size={18} color="#fff" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[cStyles.songTitle, { color: fg }]} numberOfLines={1}>Nothing playing</Text>
+            <Text style={[cStyles.hudLabel, { color: dim2 }]} numberOfLines={1}>Start music on your phone</Text>
+          </View>
+        </View>
+      </GlassPanel>
+    );
+  }
+
+  // Android, but the user hasn't granted access to read the system media session yet.
+  if (available && !permissionGranted) {
+    return (
+      <TouchableOpacity onPress={requestAccess}>
+        <GlassPanel padding={12} style={cStyles.musicHUD}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+            <View style={cStyles.albumArt}>
+              <Icon name="music.note" size={18} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[cStyles.songTitle, { color: fg }]} numberOfLines={1}>Now Playing</Text>
+              <Text style={[cStyles.hudLabel, { color: dim2 }]} numberOfLines={1}>Tap to allow media access</Text>
+            </View>
+          </View>
+        </GlassPanel>
+      </TouchableOpacity>
+    );
+  }
+
+  // Real now-playing info from the device's active media session.
+  if (available && nowPlaying) {
+    return (
+      <GlassPanel padding={12} style={cStyles.musicHUD}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+          {nowPlaying.artwork ? (
+            <Image source={{ uri: nowPlaying.artwork }} style={cStyles.albumArt} />
+          ) : (
+            <View style={cStyles.albumArt}>
+              <Icon name="music.note" size={18} color="#fff" />
+            </View>
+          )}
+          <View style={{ flex: 1 }}>
+            <Text style={[cStyles.songTitle, { color: fg }]} numberOfLines={1}>
+              {nowPlaying.title ?? 'Unknown title'}
+            </Text>
+            <Text style={[cStyles.hudLabel, { color: dim2 }]} numberOfLines={1}>
+              {nowPlaying.artist ?? ''}
+            </Text>
+          </View>
+          <TouchableOpacity onPress={skipToPrevious} style={cStyles.musicCtrlBtn}>
+            <Icon name="backward.fill" size={20} color={dim2} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={togglePlayPause} style={cStyles.musicCtrlBtn}>
+            <Icon
+              name={nowPlaying.isPlaying ? 'pause.circle.fill' : 'play.circle.fill'}
+              size={32}
+              color={fg}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={skipToNext} style={cStyles.musicCtrlBtn}>
+            <Icon name="forward.fill" size={20} color={dim2} />
+          </TouchableOpacity>
+        </View>
+      </GlassPanel>
+    );
+  }
+
+  // Fallback (iOS / web): mock track with a local play/pause toggle.
   return (
-    <GlassPanel padding={11} style={cStyles.musicHUD}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+    <GlassPanel padding={12} style={cStyles.musicHUD}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
         <View style={cStyles.albumArt}>
-          <Icon name="music.note" size={14} color="#fff" />
+          <Icon name="music.note" size={18} color="#fff" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[cStyles.songTitle, { color: fg }]} numberOfLines={1}>
@@ -546,10 +625,10 @@ function MusicHUDC({ isPlaying, onToggle }: { isPlaying: boolean; onToggle: () =
             {cyclingDefaults.currentSong.split(' - ')[1]}
           </Text>
         </View>
-        <TouchableOpacity onPress={onToggle}>
+        <TouchableOpacity onPress={onToggle} style={cStyles.musicCtrlBtn}>
           <Icon
             name={isPlaying ? 'pause.circle.fill' : 'play.circle.fill'}
-            size={22}
+            size={32}
             color={fg}
           />
         </TouchableOpacity>
@@ -978,15 +1057,18 @@ const cStyles = StyleSheet.create({
   },
   // Music HUD
   musicHUD: {
-    minWidth: 200,
+    minWidth: 230,
   },
   albumArt: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
+    width: 42,
+    height: 42,
+    borderRadius: 9,
     backgroundColor: '#FF3B5C',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  musicCtrlBtn: {
+    padding: 4,
   },
   songTitle: {
     color: C_FG,
