@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Icon } from '../Icon';
 import { useTheme } from '../../context/ThemeContext';
+import { Fonts } from '../../constants/fonts';
 
 export type Widget = { id: string; label: string; description?: string; icon: string };
 
@@ -92,7 +93,7 @@ const styles = StyleSheet.create({
   },
   checkBadgeActive: { borderWidth: 0 },
   cardFooter: { gap: 2 },
-  cardLabel: { fontSize: 17, fontWeight: '700', letterSpacing: -0.3 },
-  cardDesc: { fontSize: 12, fontWeight: '400' },
-  requiredTag: { fontSize: 10, fontWeight: '600', letterSpacing: 0.5, marginTop: 2 },
+  cardLabel: { fontSize: 17, fontFamily: Fonts.bold, letterSpacing: -0.3 },
+  cardDesc: { fontSize: 12, fontFamily: Fonts.regular },
+  requiredTag: { fontSize: 10, fontFamily: Fonts.semiBold, letterSpacing: 0.5, marginTop: 2 },
 });

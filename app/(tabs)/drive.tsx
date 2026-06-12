@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '../../components/Icon';
 import { useRide } from '../../context/RideContext';
 import { useTheme } from '../../context/ThemeContext';
+import { Fonts } from '../../constants/fonts';
 
 const MONO = Platform.OS === 'ios' ? 'Courier New' : 'monospace';
 
@@ -31,13 +32,13 @@ export default function DriveScreen() {
 
         {/* Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: Platform.OS === 'android' ? 16 : 8, paddingBottom: 12, gap: 8 }}>
-          <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: '800', letterSpacing: -0.5 }}>Rova</Text>
+          <Text style={{ color: colors.textPrimary, fontSize: 22, fontFamily: Fonts.extraBold, letterSpacing: -0.5 }}>Rova</Text>
           <View style={{ backgroundColor: colors.primary, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
-            <Text style={{ color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 1 }}>DRIVE</Text>
+            <Text style={{ color: '#fff', fontSize: 9, fontFamily: Fonts.extraBold, letterSpacing: 1 }}>DRIVE</Text>
           </View>
         </View>
 
-        <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600', letterSpacing: 1.5, marginBottom: 12 }}>YOUR EBIKE</Text>
+        <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: Fonts.semiBold, letterSpacing: 1.5, marginBottom: 12 }}>YOUR EBIKE</Text>
 
         {/* Battery + Range row */}
         <View style={{ flexDirection: 'row', gap: 12, marginBottom: 0 }}>
@@ -46,8 +47,8 @@ export default function DriveScreen() {
               <Icon name="bolt.fill" size={13} color={batteryColor} />
               <Text style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 1.5, color: colors.textSecondary }}>BATTERY</Text>
             </View>
-            <Text style={{ fontSize: 38, fontWeight: '200', letterSpacing: -1, lineHeight: 40, color: batteryColor }}>
-              {battery}<Text style={{ fontSize: 16, fontWeight: '400', color: colors.textSecondary }}>%</Text>
+            <Text style={{ fontSize: 38, fontFamily: Fonts.extraLight, letterSpacing: -1, lineHeight: 40, color: batteryColor }}>
+              {battery}<Text style={{ fontSize: 16, fontFamily: Fonts.regular, color: colors.textSecondary }}>%</Text>
             </Text>
             <View style={{ flexDirection: 'row', gap: 3, marginTop: 10 }}>
               {Array.from({ length: 10 }).map((_, i) => (
@@ -61,8 +62,8 @@ export default function DriveScreen() {
               <Icon name="map.fill" size={13} color={colors.accent} />
               <Text style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 1.5, color: colors.textSecondary }}>RANGE</Text>
             </View>
-            <Text style={{ fontSize: 38, fontWeight: '200', letterSpacing: -1, lineHeight: 40, color: colors.textPrimary }}>
-              {range}<Text style={{ fontSize: 16, fontWeight: '400', color: colors.textSecondary }}> km</Text>
+            <Text style={{ fontSize: 38, fontFamily: Fonts.extraLight, letterSpacing: -1, lineHeight: 40, color: colors.textPrimary }}>
+              {range}<Text style={{ fontSize: 16, fontFamily: Fonts.regular, color: colors.textSecondary }}> km</Text>
             </Text>
             <View style={{ height: 4, backgroundColor: colors.border, borderRadius: 2, marginTop: 10, overflow: 'hidden' }}>
               <View style={{ height: '100%', width: `${battery}%` as any, backgroundColor: colors.accent, borderRadius: 2 }} />
@@ -79,7 +80,7 @@ export default function DriveScreen() {
                 <Icon name={locked ? 'lock.fill' : 'lock.open.fill'} size={20} color={locked ? colors.danger : colors.success} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '600', marginBottom: 3 }}>Bluetooth Lock</Text>
+                <Text style={{ color: colors.textPrimary, fontSize: 15, fontFamily: Fonts.semiBold, marginBottom: 3 }}>Bluetooth Lock</Text>
                 <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
                   {locked ? 'Converter locked · motor disabled' : 'Converter unlocked · ready to ride'}
                 </Text>
@@ -96,13 +97,13 @@ export default function DriveScreen() {
           {locked && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, backgroundColor: isDark ? 'rgba(255,92,122,0.08)' : 'rgba(220,38,38,0.06)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 }}>
               <Icon name="exclamationmark.triangle.fill" size={11} color={colors.danger} />
-              <Text style={{ color: colors.danger, fontSize: 12, fontWeight: '500' }}>Motor is disabled. Unlock to ride.</Text>
+              <Text style={{ color: colors.danger, fontSize: 12, fontFamily: Fonts.medium }}>Motor is disabled. Unlock to ride.</Text>
             </View>
           )}
         </View>
 
         {/* Recent Rides */}
-        <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600', letterSpacing: 1.5, marginBottom: 12, marginTop: 12 }}>RECENT RIDES</Text>
+        <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: Fonts.semiBold, letterSpacing: 1.5, marginBottom: 12, marginTop: 12 }}>RECENT RIDES</Text>
         <View style={card}>
           {recentRides.map((ride, index) => (
             <View key={ride.id}>
@@ -110,12 +111,12 @@ export default function DriveScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent }} />
                   <View>
-                    <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600', marginBottom: 2 }}>{ride.date}</Text>
+                    <Text style={{ color: colors.textPrimary, fontSize: 14, fontFamily: Fonts.semiBold, marginBottom: 2 }}>{ride.date}</Text>
                     <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{ride.duration}</Text>
                   </View>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '300', letterSpacing: -0.5 }}>
+                  <Text style={{ color: colors.textPrimary, fontSize: 18, fontFamily: Fonts.light, letterSpacing: -0.5 }}>
                     {ride.distance} <Text style={{ fontSize: 12, color: colors.textSecondary }}>km</Text>
                   </Text>
                   <Text style={{ fontFamily: MONO, fontSize: 10, color: colors.textSecondary, marginTop: 2, letterSpacing: 0.3 }}>avg {ride.avgSpeed} km/h</Text>

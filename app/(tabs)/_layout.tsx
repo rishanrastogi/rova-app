@@ -3,6 +3,7 @@ import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Icon } from '../../components/Icon';
 import DriveIcon from '../../components/DriveIcon';
 import { useTheme } from '../../context/ThemeContext';
+import { Fonts } from '../../constants/fonts';
 
 interface TabIconProps {
   name: string;
@@ -78,7 +79,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <TabIcon name="play.circle.fill" color={color} size={22} focused={focused} isCenter />
           ),
-          tabBarLabelStyle: [styles.tabLabel, { color: colors.primary, fontWeight: '700' }],
+          tabBarLabelStyle: [styles.tabLabel, { color: colors.primary, fontFamily: Fonts.bold }],
         }}
       />
       <Tabs.Screen
@@ -106,7 +107,7 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabLabel: {
     fontSize: 10,
-    fontWeight: '500',
+    fontFamily: Fonts.medium,
   },
   centerTabIcon: {
     width: 34,

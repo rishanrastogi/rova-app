@@ -10,6 +10,7 @@ import { useLocation } from '../../hooks/useLocation';
 import { useBLE } from '../../hooks/useBLE';
 import { useRide } from '../../context/RideContext';
 import { widgets as allWidgets } from '../../constants/mockData';
+import { Fonts } from '../../constants/fonts';
 
 export default function RovaPlayScreen() {
   const [activeWidgets, setActiveWidgets] = useState<Set<string>>(
@@ -80,16 +81,16 @@ export default function RovaPlayScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: Platform.OS === 'android' ? 16 : 8, paddingBottom: 12, gap: 8 }}>
-        <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: '800', letterSpacing: -0.5 }}>Rova</Text>
+        <Text style={{ color: colors.textPrimary, fontSize: 22, fontFamily: Fonts.extraBold, letterSpacing: -0.5 }}>Rova</Text>
         <View style={{ backgroundColor: colors.primary, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
-          <Text style={{ color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 1 }}>PLAY</Text>
+          <Text style={{ color: '#fff', fontSize: 9, fontFamily: Fonts.extraBold, letterSpacing: 1 }}>PLAY</Text>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
-        <Text style={{ color: colors.textPrimary, fontSize: 32, fontWeight: '800', letterSpacing: -0.8, lineHeight: 38, marginBottom: 8 }}>Widgets</Text>
+        <Text style={{ color: colors.textPrimary, fontSize: 32, fontFamily: Fonts.extraBold, letterSpacing: -0.8, lineHeight: 38, marginBottom: 8 }}>Widgets</Text>
         <Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 24 }}>
-          <Text style={{ color: colors.accent, fontWeight: '700' }}>{activeWidgets.size}</Text>
+          <Text style={{ color: colors.accent, fontFamily: Fonts.bold }}>{activeWidgets.size}</Text>
           {` of ${allWidgets.length} selected · arranges automatically`}
         </Text>
 
@@ -98,7 +99,7 @@ export default function RovaPlayScreen() {
         <View style={{ paddingVertical: 10, alignItems: 'center' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.card, borderRadius: 20, paddingVertical: 8, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.border }}>
             <Icon name="bicycle" size={14} color={colors.textSecondary} />
-            <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500', letterSpacing: 0.2 }}>Rotate to ride</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: Fonts.medium, letterSpacing: 0.2 }}>Rotate to ride</Text>
           </View>
         </View>
       </ScrollView>

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from './Icon';
 import { useTheme } from '../context/ThemeContext';
 import { useReminders } from '../context/RemindersContext';
+import { Fonts } from '../constants/fonts';
 
 function Banner({
   icon,
@@ -109,7 +110,7 @@ const s = StyleSheet.create({
   },
   title: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: Fonts.bold,
   },
   message: {
     fontSize: 11,
@@ -123,10 +124,10 @@ const s = StyleSheet.create({
   primaryBtnText: {
     color: '#fff',
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: Fonts.bold,
   },
   snoozeText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: Fonts.semiBold,
   },
 });

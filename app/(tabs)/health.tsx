@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '../../components/Icon';
 import { useTheme } from '../../context/ThemeContext';
 import { useReminders } from '../../context/RemindersContext';
+import { Fonts } from '../../constants/fonts';
 
 const WATER_INTERVALS = [30, 45, 60, 90];
 const BREAK_INTERVALS = [15, 30, 45, 60];
@@ -194,7 +195,7 @@ const s = StyleSheet.create({
   },
   appName: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: Fonts.extraBold,
     letterSpacing: -0.5,
   },
   badge: {
@@ -205,12 +206,12 @@ const s = StyleSheet.create({
   badgeText: {
     color: '#fff',
     fontSize: 9,
-    fontWeight: '800',
+    fontFamily: Fonts.extraBold,
     letterSpacing: 1,
   },
   sectionLabel: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: Fonts.semiBold,
     letterSpacing: 1.5,
     marginBottom: 8,
   },
@@ -241,7 +242,7 @@ const s = StyleSheet.create({
   },
   rowTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: Fonts.semiBold,
   },
   rowSub: {
     fontSize: 12,
@@ -272,7 +273,7 @@ const s = StyleSheet.create({
   logBtnText: {
     color: '#fff',
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: Fonts.bold,
   },
   intervalLabel: {
     fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
@@ -292,6 +293,6 @@ const s = StyleSheet.create({
   },
   chipText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: Fonts.semiBold,
   },
 });

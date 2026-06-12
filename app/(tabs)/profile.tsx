@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Switch, Platform, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '../../components/Icon';
 import { useTheme } from '../../context/ThemeContext';
+import { Fonts } from '../../constants/fonts';
 
 export default function ProfileScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
@@ -89,9 +90,9 @@ const s = StyleSheet.create({
     paddingBottom: 12,
     gap: 8,
   },
-  appName: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
+  appName: { fontSize: 22, fontFamily: Fonts.extraBold, letterSpacing: -0.5 },
   badge: { borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
-  badgeText: { color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 1 },
+  badgeText: { color: '#fff', fontSize: 9, fontFamily: Fonts.extraBold, letterSpacing: 1 },
   avatarSection: { alignItems: 'center', paddingVertical: 28 },
   avatar: {
     width: 88,
@@ -101,11 +102,11 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 12,
   },
-  name: { fontSize: 22, fontWeight: '700', letterSpacing: -0.4 },
+  name: { fontSize: 22, fontFamily: Fonts.bold, letterSpacing: -0.4 },
   sub: { fontSize: 14, marginTop: 4 },
   sectionLabel: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: Fonts.semiBold,
     letterSpacing: 1.5,
     marginBottom: 12,
   },
@@ -129,7 +130,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowTitle: { fontSize: 15, fontWeight: '600' },
+  rowTitle: { fontSize: 15, fontFamily: Fonts.semiBold },
   rowSub: { fontSize: 12 },
   divider: { height: 1 },
 });

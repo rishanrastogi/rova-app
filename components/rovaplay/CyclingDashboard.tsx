@@ -21,6 +21,7 @@ import { useTheme } from '../../context/ThemeContext';
 import type { BLEData } from '../../hooks/useBLE';
 import { useWeather } from '../../hooks/useWeather';
 import { useNowPlaying } from '../../hooks/useNowPlaying';
+import { Fonts } from '../../constants/fonts';
 import Constants from 'expo-constants';
 
 const canRenderMap =
@@ -361,7 +362,7 @@ const aStyles = StyleSheet.create({
   speedNum: {
     color: A_FG,
     fontSize: 84,
-    fontWeight: '100',
+    fontFamily: Fonts.thin,
     lineHeight: 84,
     letterSpacing: -5,
   },
@@ -377,7 +378,7 @@ const aStyles = StyleSheet.create({
   statVal: {
     color: A_FG,
     fontSize: 26,
-    fontWeight: '300',
+    fontFamily: Fonts.light,
   },
   statLbl: {
     fontFamily: MONO,
@@ -403,7 +404,7 @@ const aStyles = StyleSheet.create({
   },
   battNum: {
     fontSize: 28,
-    fontWeight: '300',
+    fontFamily: Fonts.light,
   },
   barTrack: {
     height: 3,
@@ -468,7 +469,7 @@ const pillSt = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  text: { fontSize: 11, fontWeight: '600', letterSpacing: 0.4 },
+  text: { fontSize: 11, fontFamily: Fonts.semiBold, letterSpacing: 0.4 },
 });
 
 function SpeedHUDC({ speed, fromBle }: { speed: number; fromBle?: boolean }) {
@@ -539,10 +540,10 @@ function MusicHUDC({ isPlaying, onToggle }: { isPlaying: boolean; onToggle: () =
   // Android + notification access granted, but nothing is currently playing on the device.
   if (available && permissionGranted && !nowPlaying) {
     return (
-      <GlassPanel padding={12} style={cStyles.musicHUD}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+      <GlassPanel padding={11} style={cStyles.musicHUD}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
           <View style={cStyles.albumArt}>
-            <Icon name="music.note" size={18} color="#fff" />
+            <Icon name="music.note" size={14} color="#fff" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[cStyles.songTitle, { color: fg }]} numberOfLines={1}>Nothing playing</Text>
@@ -557,10 +558,10 @@ function MusicHUDC({ isPlaying, onToggle }: { isPlaying: boolean; onToggle: () =
   if (available && !permissionGranted) {
     return (
       <TouchableOpacity onPress={requestAccess}>
-        <GlassPanel padding={12} style={cStyles.musicHUD}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+        <GlassPanel padding={11} style={cStyles.musicHUD}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
             <View style={cStyles.albumArt}>
-              <Icon name="music.note" size={18} color="#fff" />
+              <Icon name="music.note" size={14} color="#fff" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[cStyles.songTitle, { color: fg }]} numberOfLines={1}>Now Playing</Text>
@@ -575,13 +576,13 @@ function MusicHUDC({ isPlaying, onToggle }: { isPlaying: boolean; onToggle: () =
   // Real now-playing info from the device's active media session.
   if (available && nowPlaying) {
     return (
-      <GlassPanel padding={12} style={cStyles.musicHUD}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+      <GlassPanel padding={11} style={cStyles.musicHUD}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
           {nowPlaying.artwork ? (
             <Image source={{ uri: nowPlaying.artwork }} style={cStyles.albumArt} />
           ) : (
             <View style={cStyles.albumArt}>
-              <Icon name="music.note" size={18} color="#fff" />
+              <Icon name="music.note" size={14} color="#fff" />
             </View>
           )}
           <View style={{ flex: 1 }}>
@@ -592,18 +593,18 @@ function MusicHUDC({ isPlaying, onToggle }: { isPlaying: boolean; onToggle: () =
               {nowPlaying.artist ?? ''}
             </Text>
           </View>
-          <TouchableOpacity onPress={skipToPrevious} style={cStyles.musicCtrlBtn}>
-            <Icon name="backward.fill" size={20} color={dim2} />
+          <TouchableOpacity onPress={skipToPrevious}>
+            <Icon name="backward.fill" size={22} color={dim2} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={togglePlayPause} style={cStyles.musicCtrlBtn}>
+          <TouchableOpacity onPress={togglePlayPause}>
             <Icon
               name={nowPlaying.isPlaying ? 'pause.circle.fill' : 'play.circle.fill'}
-              size={32}
+              size={34}
               color={fg}
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={skipToNext} style={cStyles.musicCtrlBtn}>
-            <Icon name="forward.fill" size={20} color={dim2} />
+          <TouchableOpacity onPress={skipToNext}>
+            <Icon name="forward.fill" size={22} color={dim2} />
           </TouchableOpacity>
         </View>
       </GlassPanel>
@@ -612,10 +613,10 @@ function MusicHUDC({ isPlaying, onToggle }: { isPlaying: boolean; onToggle: () =
 
   // Fallback (iOS / web): mock track with a local play/pause toggle.
   return (
-    <GlassPanel padding={12} style={cStyles.musicHUD}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+    <GlassPanel padding={11} style={cStyles.musicHUD}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
         <View style={cStyles.albumArt}>
-          <Icon name="music.note" size={18} color="#fff" />
+          <Icon name="music.note" size={14} color="#fff" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[cStyles.songTitle, { color: fg }]} numberOfLines={1}>
@@ -625,10 +626,10 @@ function MusicHUDC({ isPlaying, onToggle }: { isPlaying: boolean; onToggle: () =
             {cyclingDefaults.currentSong.split(' - ')[1]}
           </Text>
         </View>
-        <TouchableOpacity onPress={onToggle} style={cStyles.musicCtrlBtn}>
+        <TouchableOpacity onPress={onToggle}>
           <Icon
             name={isPlaying ? 'pause.circle.fill' : 'play.circle.fill'}
-            size={32}
+            size={34}
             color={fg}
           />
         </TouchableOpacity>
@@ -725,7 +726,7 @@ function CameraFeedC({
         onPress={onRequestPermission}
         style={{ marginTop: 14, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8 }}
       >
-        <Text style={{ color: '#4AF3D0', fontSize: 13, fontWeight: '600' }}>Grant camera access</Text>
+        <Text style={{ color: '#4AF3D0', fontSize: 13, fontFamily: Fonts.semiBold }}>Grant camera access</Text>
       </TouchableOpacity>
     </View>
   );
@@ -951,7 +952,7 @@ function LayoutC({
         {has('proximity') && !has('weather') && (
           <TouchableOpacity onPress={triggerProximityAlert}>
             <GlassPanel padding={10}>
-              <Text style={{ color: '#FF5C7A', fontSize: 11, fontWeight: '600' }}>
+              <Text style={{ color: '#FF5C7A', fontSize: 11, fontFamily: Fonts.semiBold }}>
                 Test Alert
               </Text>
             </GlassPanel>
@@ -1012,7 +1013,7 @@ const cStyles = StyleSheet.create({
   hudSpeed: {
     color: C_FG,
     fontSize: 30,
-    fontWeight: '300',
+    fontFamily: Fonts.light,
     letterSpacing: -1.5,
     lineHeight: 30,
   },
@@ -1025,7 +1026,7 @@ const cStyles = StyleSheet.create({
   hudStatVal: {
     color: C_FG,
     fontSize: 18,
-    fontWeight: '400',
+    fontFamily: Fonts.regular,
     lineHeight: 20,
   },
   hudLabel: {
@@ -1041,7 +1042,7 @@ const cStyles = StyleSheet.create({
   battNum: {
     color: C_FG,
     fontSize: 26,
-    fontWeight: '300',
+    fontFamily: Fonts.light,
   },
   battTrack: {
     height: 3,
@@ -1057,23 +1058,20 @@ const cStyles = StyleSheet.create({
   },
   // Music HUD
   musicHUD: {
-    minWidth: 230,
+    minWidth: 300,
   },
   albumArt: {
-    width: 42,
-    height: 42,
-    borderRadius: 9,
+    width: 34,
+    height: 34,
+    borderRadius: 8,
     backgroundColor: '#FF3B5C',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  musicCtrlBtn: {
-    padding: 4,
-  },
   songTitle: {
     color: C_FG,
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: Fonts.semiBold,
   },
   // Speed hero center
   speedHeroCenter: {
@@ -1093,7 +1091,7 @@ const cStyles = StyleSheet.create({
   heroSpeed: {
     color: C_FG,
     fontSize: 110,
-    fontWeight: '100',
+    fontFamily: Fonts.thin,
     lineHeight: 100,
     letterSpacing: -7,
   },
@@ -1106,7 +1104,7 @@ const cStyles = StyleSheet.create({
   heroStatVal: {
     color: C_FG,
     fontSize: 28,
-    fontWeight: '300',
+    fontFamily: Fonts.light,
     lineHeight: 30,
   },
   // Camera tag
@@ -1198,7 +1196,7 @@ export default function CyclingDashboard({ selectedWidgets, locationState, bleDa
   if (selectedWidgets.length === 0) {
     return (
       <View style={{ flex: 1, backgroundColor: A_BG, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-        <Text style={{ color: A_DIM, fontSize: 16, fontWeight: '600' }}>No widgets selected</Text>
+        <Text style={{ color: A_DIM, fontSize: 16, fontFamily: Fonts.semiBold }}>No widgets selected</Text>
         <Text style={{ color: A_DIM, fontSize: 13, opacity: 0.7 }}>Switch to gallery to pick some</Text>
       </View>
     );

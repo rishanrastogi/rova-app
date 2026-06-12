@@ -5,6 +5,7 @@ import Svg, { Path, Circle } from 'react-native-svg';
 import { Icon } from '../../components/Icon';
 import { useTheme } from '../../context/ThemeContext';
 import { communityFeed, type CommunityRide, type RoutePoint } from '../../constants/communityData';
+import { Fonts } from '../../constants/fonts';
 
 const MONO = Platform.OS === 'ios' ? 'Courier New' : 'monospace';
 
@@ -120,7 +121,7 @@ const s = StyleSheet.create({
   },
   appName: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: Fonts.extraBold,
     letterSpacing: -0.5,
   },
   badge: {
@@ -131,12 +132,12 @@ const s = StyleSheet.create({
   badgeText: {
     color: '#fff',
     fontSize: 9,
-    fontWeight: '800',
+    fontFamily: Fonts.extraBold,
     letterSpacing: 1,
   },
   sectionLabel: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: Fonts.semiBold,
     letterSpacing: 1.5,
     marginBottom: 12,
   },
@@ -162,11 +163,11 @@ const s = StyleSheet.create({
   avatarText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: Fonts.bold,
   },
   name: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: Fonts.bold,
   },
   meta: {
     fontSize: 12,
@@ -174,7 +175,7 @@ const s = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: Fonts.semiBold,
     marginBottom: 12,
   },
   routeWrap: {
@@ -196,7 +197,7 @@ const s = StyleSheet.create({
   },
   statValue: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: Fonts.bold,
   },
   statLabel: {
     fontFamily: MONO,
@@ -214,6 +215,6 @@ const s = StyleSheet.create({
   },
   actionText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: Fonts.semiBold,
   },
 });
